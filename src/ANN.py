@@ -234,7 +234,7 @@ def normalize_test(train_X, test_X):
     return normazlied_text_X.T
 
 
-df = pd.read_csv('train.csv')
+df = pd.read_csv('MNIST_train.csv')
 X = np.array(df.iloc[:, 1:])
 y = np.array(df['label'])
 
@@ -300,8 +300,8 @@ plt.show()
 # which was 123. I fitted a model with all the data points using 1 hidden layer
 # and 123 units.
 # I then submitted the estimation to the test data set provided by Kaggle,
-# the accuracy calculated by Kaggle was about 91%.
-df_test = pd.read_csv('test.csv')
+# the accuracy calculated by Kaggle was about 90%.
+df_test = pd.read_csv('MNIST_test.csv')
 X_testing = np.array(df.iloc[:, 1:])
 clf = ANN(1, 123)
 clf.fit(X, y, 0.01, 1)

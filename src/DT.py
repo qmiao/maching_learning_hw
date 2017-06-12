@@ -5,29 +5,16 @@ from scipy.stats import mode
 
 
 class DecisionTree():
-
     def __init__(self, max_depth=3):
-        """
-        Initiates a Decision Tree with the specified max_depth. Default max_depth is 3
-        """
         self.max_depth = max_depth
         self.root = Node(depth=1)
 
     def fit(self, X, y):
-        """
-        Fits a Decision Tree model on a given data set
-        X: a pandas dataframe consisting of the independent variables
-        y: a pandas series object consisting of the output, dependent variable.
-        """
         data = X
         data['y'] = y
         self.root.split(data, self.max_depth)
 
     def predict(self, T):
-        """
-        returns the predicted classes for a dataframe T of test examples. Assume T has 
-        the same columns as X, which was used in training.
-        """
         T['predicted_y'] = -1
         for index, row in T.iterrows():
 
@@ -41,10 +28,7 @@ class DecisionTree():
             T.set_value(index, 'predicted_y', current_node.classification)
         return T['predicted_y']
 
-    def print(self):
-        """
-        Prints the current decision tree using BFS order
-        """
+    def print_as(self):
         current_level = [self.root]
         while current_level:
             next_level = list()
@@ -89,6 +73,7 @@ class Node:
             return
 
         data_rows, data_cols = data.shape
+        # if the data being passed is empty,
 
         # if the data being passed has the same classification,
         if len(data['y'].unique()) == 1:
@@ -133,6 +118,108 @@ class Node:
             else:
                 self.description += "Test: column " + str(self.column) + " <= " + str(self.threshold) + "?\n"
         return self.description
+
+
+def validation_curve():
+    """
+    Reads in a file from the current directory called arrhythmia.csv
+    Creates a file called validation.pdf in the current directory with the required plot
+    :return:
+    """
+
+    data = pd.read_csv("arrhythmia.csv", na_values='?', header=None)
+
+    # shuffle data and divide into 3 equal size data sets
+    data1 = data.sample(frac=(1 / 3))
+    temp = data.loc[~data.index.isin(data1.index)]
+    data2 = temp.sample(frac=(1 / 2))
+    data3 = temp.loc[~temp.index.isin(data2.index)]
+
+    max_depth = [i for i in range(2, 21) if i % 2 == 0]  # max_depth = [2, 4, 6, ... , 20]
+    avg_training_accuracy = []
+    avg_test_accuracy = []
+
+    for depth in max_depth:
+
+        dt1 = DecisionTree(max_depth=depth)
+        dt2 = DecisionTree(max_depth=depth)
+        dt3 = DecisionTree(max_depth=depth)
+
+        train_data1 = pd.concat([data1, data2])
+        train_data2 = pd.concat([data1, data3])
+        train_data3 = pd.concat([data2, data3])
+
+        test_data1 = data3
+        test_data2 = data2
+        test_data3 = data1
+
+        # build the 3 decision trees based on the 3 different training data sets
+        dt1.fit(train_data1.iloc[:, :-1], train_data1.iloc[:, -1])
+        dt2.fit(train_data2.iloc[:, :-1], train_data2.iloc[:, -1])
+        dt3.fit(train_data3.iloc[:, :-1], train_data3.iloc[:, -1])
+
+        # predict the output of the 3 training sets using the 3 decision trees built
+        predict_train1 = dt1.predict(train_data1.iloc[:, :-1])  # will return the output Data Series with indices
+        predict_train2 = dt2.predict(train_data2.iloc[:, :-1])
+        predict_train3 = dt3.predict(train_data3.iloc[:, :-1])
+        actual_train1 = train_data1.iloc[:, -1]
+        actual_train2 = train_data2.iloc[:, -1]
+        actual_train3 = train_data3.iloc[:, -1]
+
+        correct_train1 = 0
+        for index in actual_train1.index:
+            if predict_train1[index] == actual_train1[index]:
+                correct_train1 += 1
+        train_accuracy1 = correct_train1 / len(actual_train1)
+
+        correct_train2 = 0
+        for index in actual_train2.index:
+            if predict_train2[index] == actual_train2[index]:
+                correct_train2 += 1
+        train_accuracy2 = correct_train2 / len(actual_train2)
+
+        correct_train3 = 0
+        for index in actual_train3.index:
+            if predict_train3[index] == actual_train3[index]:
+                correct_train3 += 1
+        train_accuracy3 = correct_train3 / len(actual_train3)
+
+        predict_test1 = dt1.predict(test_data1.iloc[:, :-1])
+        predict_test2 = dt2.predict(test_data2.iloc[:, :-1])
+        predict_test3 = dt3.predict(test_data3.iloc[:, :-1])
+        actual_test1 = test_data1.iloc[:, -1]
+        actual_test2 = test_data2.iloc[:, -1]
+        actual_test3 = test_data3.iloc[:, -1]
+
+        correct_test1 = 0
+        for index in actual_test1.index:
+            if predict_test1[index] == actual_test1[index]:
+                correct_test1 += 1
+        test_accuracy1 = correct_test1 / len(actual_test1)
+
+        correct_test2 = 0
+        for index in actual_test2.index:
+            if predict_test2[index] == actual_test2[index]:
+                correct_test2 += 1
+        test_accuracy2 = correct_test2 / len(actual_test2)
+
+        correct_test3 = 0
+        for index in actual_test3.index:
+            if predict_test3[index] == actual_test3[index]:
+                correct_test3 += 1
+        test_accuracy3 = correct_test3 / len(actual_test3)
+
+        avg_training_accuracy.append(np.average([train_accuracy1, train_accuracy2, train_accuracy3]))
+        avg_test_accuracy.append(np.average([test_accuracy1, test_accuracy2, test_accuracy3]))
+
+    plt.plot(max_depth, avg_test_accuracy, label='test accuracy', lw=2, marker='o')
+    plt.plot(max_depth, avg_training_accuracy, label='train accuracy', lw=2, marker='s')
+    plt.xlabel('max_depth')
+    plt.ylabel('accuracy')
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.savefig("validation.pdf")
+
 
 def optimal_test(data):
     """
@@ -239,3 +326,6 @@ def best_split_value(data, column):
         last = row
         i += 1
     return split_value, max_info_gain, left_data, right_data
+
+
+validation_curve()

@@ -12,8 +12,8 @@ import csv
 
 
 # Reads in the Train and Test data (https://www.kaggle.com/c/prudential-life-insurance-assessment)
-train_data = pd.read_csv("train.csv", index_col=0)
-test_data = pd.read_csv("test.csv", index_col=0)
+train_data = pd.read_csv("prudential_train.csv", index_col=0)
+test_data = pd.read_csv("prudential_test.csv", index_col=0)
 
 # Since there are no explicit limits on the number of unique values in categorical variable, discrete variable, etc.
 # I hardcoded the list of continuous variables and discrete variables based on the data description.
@@ -203,7 +203,7 @@ predictions = lr_model.predict(test.drop('Response',1))
 indices = np.array(test.index)
 
 # write the predictions to a csv file: Kaggle Score: 0.51925
-with open('sample_submission.csv', 'w') as csvfile:
+with open('prudential_submission.csv', 'w') as csvfile:
     fieldnames = ['Id', 'Response']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
