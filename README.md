@@ -1,4 +1,4 @@
-# mlprojects
+# Machine Learning Projects
 
 ---
 
